@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Collaborative Text Editor</title>
+  </head>
+  <body>
+    <textarea id="text" rows="10" cols="50"></textarea>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+      const socket = io();
+
+      const textarea = document.getElementById("text");
+
+      // Emit an event when the text changes
+      textarea.addEventListener("input", () => {
+        const text = textarea.value;
+        socket.emit("text change", text);
+      });
+
+      // Update text area with changes from other users
+      socket.on("text change", (data) => {
+        textarea.value = data;
+      });
+    </script>
+  </body>
+</html>
