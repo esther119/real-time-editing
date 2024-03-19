@@ -1,27 +1,39 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
   <head>
-    <title>Collaborative Text Editor</title>
-  </head>
-  <body>
-    <textarea id="text" rows="10" cols="50"></textarea>
-
+    <meta charset="UTF-8" />
+    <title>Collaborative Text Editing</title>
     <script src="/socket.io/socket.io.js"></script>
     <script>
-      const socket = io();
+      document.addEventListener("DOMContentLoaded", function () {
+        var socket = io();
 
-      const textarea = document.getElementById("text");
+        // When the join button is clicked
+        document.getElementById("join").addEventListener("click", function () {
+          var room = document.getElementById("room").value;
+          socket.emit("join room", room);
+          document.getElementById("text").disabled = false; // Enable text area
+        });
 
-      // Emit an event when the text changes
-      textarea.addEventListener("input", () => {
-        const text = textarea.value;
-        socket.emit("text change", text);
-      });
+        // Emit changes in the text area to the server
+        document.getElementById("text").addEventListener("input", function () {
+          var room = document.getElementById("room").value;
+          var content = document.getElementById("text").value;
+          console.log("content", content);
+          socket.emit("text change", { room: room, content: content });
+        });
 
-      // Update text area with changes from other users
-      socket.on("text change", (data) => {
-        textarea.value = data;
+        // Receive text updates from the server
+        socket.on("text change", function (content) {
+          console.log("receive update", content);
+          document.getElementById("text").value = content;
+        });
       });
     </script>
+  </head>
+  <body>
+    <input type="text" id="room" placeholder="Room name" />
+    <button id="join">Join Room</button>
+    <textarea id="text" placeholder="Start typing..." disabled></textarea>
   </body>
 </html>

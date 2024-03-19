@@ -7,7 +7,6 @@ const server = http.createServer(app);
 const io = socketIo(server); // Attach socket.io to our server
 
 app.get("/", (req, res) => {
-  console.log("__dirname", __dirname); // send index.html file to the browser
   res.sendFile(__dirname + "/index.html");
 });
 
@@ -15,9 +14,23 @@ app.get("/", (req, res) => {
 io.on("connection", (socket) => {
   console.log("A user connected");
 
-  // Receive updates from client and broadcast them
+  // Joining a room
+  socket.on("join room", (room) => {
+    socket.join(room);
+    console.log(`User ${socket.id} joined room ${room}`);
+  });
+
+  // Handle text changes in a specific room
   socket.on("text change", (data) => {
-    socket.broadcast.emit("text change", data);
+    const { room, content } = data;
+    // Broadcast to all other users in the room
+    socket.to(room).emit("text change", content);
+  });
+
+  // Leaving a room
+  socket.on("leave room", (room) => {
+    socket.leave(room);
+    console.log(`User ${socket.id} left room ${room}`);
   });
 
   socket.on("disconnect", () => {
