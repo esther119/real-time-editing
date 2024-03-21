@@ -1,39 +1,85 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
   <head>
-    <meta charset="UTF-8" />
-    <title>Collaborative Text Editing</title>
-    <script src="/socket.io/socket.io.js"></script>
-    <script>
-      document.addEventListener("DOMContentLoaded", function () {
-        var socket = io();
-
-        // When the join button is clicked
-        document.getElementById("join").addEventListener("click", function () {
-          var room = document.getElementById("room").value;
-          socket.emit("join room", room);
-          document.getElementById("text").disabled = false; // Enable text area
-        });
-
-        // Emit changes in the text area to the server
-        document.getElementById("text").addEventListener("input", function () {
-          var room = document.getElementById("room").value;
-          var content = document.getElementById("text").value;
-          console.log("content", content);
-          socket.emit("text change", { room: room, content: content });
-        });
-
-        // Receive text updates from the server
-        socket.on("text change", function (content) {
-          console.log("receive update", content);
-          document.getElementById("text").value = content;
-        });
-      });
-    </script>
+    <title>Collaborative Editor</title>
   </head>
   <body>
-    <input type="text" id="room" placeholder="Room name" />
-    <button id="join">Join Room</button>
-    <textarea id="text" placeholder="Start typing..." disabled></textarea>
+    <div
+      id="editor"
+      contenteditable="true"
+      style="border: 1px solid black; height: 400px; width: 600px"
+    ></div>
+    <script>
+      const ws = new WebSocket("ws://localhost:8080");
+      const editor = document.getElementById("editor");
+      let localUserId = null;
+      let isExternalUpdate = false;
+      let cursors = {}; // Object to keep track of user cursors
+
+      ws.onmessage = (event) => {
+        const data = JSON.parse(event.data);
+        console.log("client data", data);
+        switch (data.type) {
+          case "init":
+            localUserId = data.userId;
+            editor.innerHTML = data.text; // Set initial text
+            break;
+
+          case "textChange":
+            // console.log("text change websocket client");
+            isExternalUpdate = true;
+            editor.innerHTML = data.text; // Update text content
+            isExternalUpdate = false;
+            break;
+
+          case "cursorMove":
+            console.log("cursorMove websocket client");
+            if (data.userId !== localUserId) {
+              if (!cursors[data.userId]) {
+                createCursor(data.userId);
+              }
+              moveCursor(data.userId, data.x, data.y);
+            }
+            break;
+        }
+      };
+
+      // Send text changes, avoiding loops from external updates
+      editor.addEventListener("input", (event) => {
+        if (!isExternalUpdate) {
+          ws.send(
+            JSON.stringify({ type: "textChange", text: editor.innerHTML })
+          );
+        }
+      });
+      function createCursor(userId) {
+        const cursor = document.createElement("div");
+        cursor.setAttribute("id", `cursor-${userId}`);
+        cursor.style.position = "absolute";
+        cursor.style.height = "20px";
+        cursor.style.width = "2px";
+        cursor.style.backgroundColor = getRandomColor();
+        cursor.style.zIndex = "1000";
+        editor.appendChild(cursor);
+        cursors[userId] = cursor;
+      }
+
+      function moveCursor(userId, x, y) {
+        const cursor = cursors[userId];
+        if (cursor) {
+          cursor.style.left = `${x}px`;
+          cursor.style.top = `${y}px`;
+        }
+      }
+
+      function getRandomColor() {
+        const letters = "0123456789ABCDEF";
+        let color = "#";
+        for (let i = 0; i < 6; i++) {
+          color += letters[Math.floor(Math.random() * 16)];
+        }
+        return color;
+      }
+    </script>
   </body>
 </html>
