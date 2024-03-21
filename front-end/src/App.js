@@ -5,7 +5,7 @@ function App() {
   // test api
 
   useEffect(() => {
-    fetch("http://localhost:3000/")
+    fetch("https://cryptic-waters-95799-0fe8a04304b3.herokuapp.com/")
       .then((response) => response.json())
       .then((data) => console.log(data))
       .catch((error) => console.error("Error:", error));
