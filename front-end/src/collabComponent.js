@@ -5,21 +5,31 @@ function CollaborativeTextEditor() {
   const [room, setRoom] = useState("");
   const [text, setText] = useState("");
   const [isTextDisabled, setTextDisabled] = useState(true);
+
+  // Use useRef to persist the socket instance
   const socket = useRef(null);
 
   useEffect(() => {
-    socket.current = io();
+    // Initialize socket only once
+    if (socket.current === null) {
+      socket.current = io("http://localhost:3000/", {
+        transports: ["websocket"],
+      });
+    }
 
-    // Receive text updates from the server
-    socket.current.on("text change", (content) => {
+    // Function to handle text change events
+    const handleTextChange = (content) => {
       console.log("receive update", content);
       setText(content);
-    });
+    };
+
+    // Subscribe to socket events
+    socket.current.on("text change", handleTextChange);
 
     // Clean up on component unmount or when room changes
     return () => {
       if (socket.current) {
-        socket.current.off("text change");
+        socket.current.off("text change", handleTextChange);
       }
     };
   }, []);
