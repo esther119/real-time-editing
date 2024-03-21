@@ -1,11 +1,14 @@
 import "./App.css";
 import CollaborativeTextEditor from "./collabComponent";
 import { useEffect } from "react";
+const EndPoint = "https://cryptic-waters-95799-0fe8a04304b3.herokuapp.com/";
+// "https://cryptic-waters-95799-0fe8a04304b3.herokuapp.com/"
+
 function App() {
   // test api
 
   useEffect(() => {
-    fetch("https://cryptic-waters-95799-0fe8a04304b3.herokuapp.com/")
+    fetch(EndPoint)
       .then((response) => response.json())
       .then((data) => console.log(data))
       .catch((error) => console.error("Error:", error));
